@@ -1,0 +1,18 @@
+version: '3'
+services:     
+  bot-client:
+    image: racoonmediaserver/bot-client:latest
+    restart: always
+    container_name: bot-client
+    environment:
+      - RMS_DEVICE=${DEVICE}
+      - RMS_REMOTE_HOST=${REMOTE_HOST}
+      - RMS_REMOTE_PORT=${REMOTE_PORT}
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30 --label-enable

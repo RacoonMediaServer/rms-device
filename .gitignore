@@ -1,0 +1,6 @@
+# Current environment file
+.env
+
+# Default database folder
+db
+
