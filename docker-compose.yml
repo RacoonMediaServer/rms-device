@@ -11,6 +11,17 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
+  torrent:
+    image: racoonmediaserver/torrent:latest
+    restart: always
+    container_name: torrent
+    environment:
+      - RMS_TORRENTS_DB=/media/db
+    volumes:
+      - ${MEDIA}/torrents:/media
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
   watchtower:
     image: containrrr/watchtower
     volumes:

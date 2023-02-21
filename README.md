@@ -1,2 +1,2 @@
 # rms-device
-configuration &amp; scripts for device
+Configuration &amp; scripts for device
