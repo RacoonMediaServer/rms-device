@@ -1,5 +1,10 @@
 version: '3'
 services:     
+  db:
+    image: mongo
+    restart: always
+    container_name: mongo
+
   bot-client:
     image: racoonmediaserver/bot-client:latest
     restart: always
@@ -21,6 +26,47 @@ services:
       - ${MEDIA}/torrents:/media
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+
+  library:
+    image: racoonmediaserver/library:latest
+    restart: always
+    container_name: library
+    environment:
+      - RMS_DEVICE=${DEVICE}
+      - RMS_DATABASE=mongodb://db:27017/library
+      - RMS_REMOTE_HOST=${REMOTE_HOST}
+      - RMS_REMOTE_PORT=${REMOTE_PORT}
+    volumes:
+      - ${MEDIA}:/media/library
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    depends_on:
+      - db
+
+  bot:
+    image: racoonmediaserver/bot-client:latest
+    restart: always
+    container_name: bot
+    environment:
+      - RMS_DEVICE=${DEVICE}
+      - RMS_REMOTE_HOST=${REMOTE_HOST}
+      - RMS_REMOTE_PORT=${REMOTE_PORT}
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  notifier:
+    image: racoonmediaserver/notifier:latest
+    restart: always
+    container_name: notifier
+    environment:
+      - RMS_DEVICE=${DEVICE}
+      - RMS_DATABASE=mongodb://db:27017/notifier
+      - RMS_REMOTE_HOST=${REMOTE_HOST}
+      - RMS_REMOTE_PORT=${REMOTE_PORT}
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    depends_on:
+      - db
 
   watchtower:
     image: containrrr/watchtower
