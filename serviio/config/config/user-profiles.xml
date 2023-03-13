@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Profiles version="1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.serviio.org/xsd/profiles/v/1.9.1/Profiles.xsd">
+<Profile id="sam_q" name="Samsung TV / player (Q-series)" extendsProfileId="sam_j">
+<Detection>
+<UPnPSearch>
+<ModelName>(^[A-Z]{2}\d{2}Q\d+[A-Z]+)</ModelName>
+<ModelNumber>(1\.0)|(AllShare1\.0)</ModelNumber>
+</UPnPSearch>
+<HttpHeaders>
+<!-- some models only support headers -->
+<User-Agent>(.*SEC_HHP_\[TV\] [A-Z]{2}\d{2}M[A-Z]?\d{3,4}.*)</User-Agent>
+</HttpHeaders>
+</Detection>
+<Transcoding>
+<Video targetContainer="mpegts" targetVCodec="mpeg2video" targetACodec="ac3" aBitrate="384">
+<Matches container="avi" />
+<Matches container="avi" vCodec="mpeg4" vFourCC="div3,div4,div5,divx,dm4v,dx50" />
+<Matches container="avi" vCodec="msmpeg4" vFourCC="div3,div4,div5,divx,dm4v,dx50" />
+<Matches container="avi" vCodec="dvvideo" />
+<Matches container="*" aCodec="dca" />
+<Matches container="*" aCodec="dts-hd" />
+</Video>
+</Transcoding>
+</Profile>
+</Profiles>

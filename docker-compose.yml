@@ -56,6 +56,18 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
     depends_on:
       - db
+  
+  dlna:
+    container_name: dlna
+    build: ./serviio
+    restart: always
+    environment:
+      - RMS_IP_ADDR=${INTERFACE_IP}
+    volumes:
+      - ./serviio/config:/opt/serviio/config
+      - ${MEDIA}/movies:/media/library/movies
+      - ${MEDIA}/serviio:/opt/serviio/library/db
+    network_mode: "host"
 
   watchtower:
     image: containrrr/watchtower
