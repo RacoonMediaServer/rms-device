@@ -1,0 +1,15 @@
+[Unit]
+Description=RMS Backup Script
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/RacoonMediaServer
+User=root
+Group=root
+ExecStart=/bin/bash /opt/RacoonMediaServer/backup.sh
+
+[Install]
+WantedBy=multi-user.target
+
+

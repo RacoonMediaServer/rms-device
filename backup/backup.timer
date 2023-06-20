@@ -1,0 +1,9 @@
+[Unit]
+Description="Automatically run backups"
+
+[Timer]
+OnCalendar=monthly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

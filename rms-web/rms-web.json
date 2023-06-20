@@ -1,0 +1,25 @@
+{
+    "http": {
+      "host": "0.0.0.0",
+      "port": 8080
+    },
+    "cctv": {
+      "enabled": false
+    },
+    "content": {
+      "directory": "/media"
+    },
+    "bot": "RacoonMediaServerBot",
+    "services": [
+      {
+        "title": "Serviio",
+        "description": "DLNA-сервер. Раздает видео контент в локальной сети на любые устройства",
+        "address": "http://rms.local:23423/console"
+      },
+      {
+        "title": "Nextcloud",
+        "description": "Хранилище пользовательских данных, доступное с любых устройств",
+        "address": "http://nc.rms.local/"
+      }
+    ]
+  }

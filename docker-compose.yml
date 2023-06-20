@@ -1,9 +1,82 @@
 version: '3'
 services:     
-  db:
+  mongo:
     image: mongo
     restart: always
     container_name: mongo
+    ports:
+      - "0.0.0.0:27017:27017" # for debug
+    volumes:
+      - ${DATA}/mongo/db:/data/db
+      - ${DATA}/mongo/dump:/dump  
+
+  postgres:
+    image: postgres:alpine
+    restart: always
+    container_name: postgres
+    volumes:
+      - ./postgres:/docker-entrypoint-initdb.d/
+      - ${DATA}/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_MULTIPLE_DATABASES=${POSTGRES_DATABASES}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=qweasd123      
+
+  gateway:
+    image: traefik:latest
+    container_name: gateway
+    restart: always
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock    
+
+  nextcloud:
+    image: nextcloud:26
+    restart: always
+    container_name: nextcloud
+    volumes:
+      - ${DATA}/nextcloud:/var/www/html
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=user_nextcloud
+      - POSTGRES_PASSWORD=qweasd123
+      - NEXTCLOUD_ADMIN_USER=${USER}
+      - NEXTCLOUD_ADMIN_PASSWORD=${PASSWORD}
+      - NEXTCLOUD_TRUSTED_DOMAINS="nc.rms.local nextcloud"
+      - PHP_UPLOAD_LIMIT=40G
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextcloud.rule=Host(`nc.rms.local`)"
+      - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
+    depends_on:
+      - postgres
+      - gateway
+
+  web:
+    image: racoonmediaserver/web:latest
+    restart: always
+    container_name: web
+    volumes:
+      - ./rms-web/rms-web.json:/etc/rms/rms-web.json 
+      - ${MEDIA}/library:/media
+    environment:
+      - RMS_CCTV_ENABLED=true
+      - TZ=Europe/Moscow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`rms.local`)"
+      - "traefik.http.services.web.loadbalancer.server.port=8080"
+      - "com.centurylinklabs.watchtower.enable=true"     
+    depends_on:
+      - gateway
 
   bot-client:
     image: racoonmediaserver/bot-client:latest
@@ -21,10 +94,9 @@ services:
     restart: always
     container_name: torrent
     environment:
-      - RMS_TORRENTS_DB=/media/db
-      - RMS_TORRENTS_DIRECTORY=/media
+      - RMS_DATABASE=/media/library/torrents/db
     volumes:
-      - ${MEDIA}/torrents:/media
+      - ${MEDIA}/library/torrents:/media/library/torrents
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
@@ -34,30 +106,50 @@ services:
     container_name: library
     environment:
       - RMS_DEVICE=${DEVICE}
-      - RMS_DATABASE=mongodb://db:27017/library
+      - RMS_DATABASE=mongodb://mongo:27017/library
       - RMS_REMOTE_HOST=${REMOTE_HOST}
       - RMS_REMOTE_PORT=${REMOTE_PORT}
+      - MICRO_BROKER_ADDRESS=0.0.0.0:5531
     volumes:
-      - ${MEDIA}:/media/library
+      - ${MEDIA}/library:/media/library
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     depends_on:
-      - db
+      - mongo
 
   notifier:
     image: racoonmediaserver/notifier:latest
     restart: always
-    container_name: notifier_v2
+    container_name: notifier
     environment:
       - RMS_DEVICE=${DEVICE}
-      - RMS_DATABASE=mongodb://db:27017/notifier
+      - RMS_DATABASE=mongodb://mongo:27017/notifier
       - RMS_REMOTE_HOST=${REMOTE_HOST}
       - RMS_REMOTE_PORT=${REMOTE_PORT}
+      - MICRO_BROKER_ADDRESS=0.0.0.0:5531
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     depends_on:
-      - db
-  
+      - mongo
+
+  notes:
+    image: racoonmediaserver/notes:latest
+    restart: always
+    container_name: notes
+    environment:
+      - TZ=Europe/Moscow
+      - RMS_DATABASE=/db/notes.db
+      - RMS_WEBDAV_ROOT=http://nextcloud/remote.php/dav
+      - RMS_WEBDAV_USER=${USER}
+      - RMS_WEBDAV_PASSWORD=${PASSWORD}
+    volumes:
+      - ${DATA}/notes:/db
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    depends_on:
+      - bot-client
+      - nextcloud
+
   dlna:
     container_name: dlna
     build: ./serviio
@@ -66,7 +158,7 @@ services:
       - RMS_IP_ADDR=${INTERFACE_IP}
     volumes:
       - ./serviio/config:/opt/serviio/config
-      - ${MEDIA}:/media/library
+      - ${MEDIA}/library:/media/library
     network_mode: "host"
 
   watchtower:
