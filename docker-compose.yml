@@ -60,6 +60,32 @@ services:
       - postgres
       - gateway
 
+  gitea:
+    image: gitea/gitea:1.21.3
+    restart: always
+    container_name: gitea
+    volumes:
+      - ${DATA}/git:/data
+    environment:
+      - ROOT_URL="http://git.rms.local/"
+      - APP_NAME="Gitea:My private Git repository"
+      - USER_UID=1000
+      - USER_GID=1000
+      - DISABLE_REGISTRATION=true
+      - REQUIRE_SIGNIN_VIEW=true
+      - DB_TYPE=postgres
+      - DB_HOST=postgres:5432
+      - DB_NAME=gitea
+      - DB_USER=gitea
+      - DB_PASSWD=qweasd123
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.gitea.loadbalancer.server.port=3000"
+      - "traefik.http.routers.gitea.rule=Host(`git.rms.local`)"
+    depends_on:
+      - postgres
+      - gateway
+
   web:
     image: racoonmediaserver/web:latest
     restart: always
