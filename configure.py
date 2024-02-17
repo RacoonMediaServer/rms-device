@@ -27,7 +27,7 @@ config += "DATA={0}\n".format(args.data)
 config += "\nUSER={0}\n".format(args.user)
 config += "PASSWORD={0}\n".format(args.password)
 
-config += '\nPOSTGRES_DATABASES="gitea,gitea: nextcloud,user_nextcloud"\n'
+config += '\nPOSTGRES_DATABASES="gitea,gitea: nextcloud,user_nextcloud: rms,rms"\n'
 
 f = open(".env", 'w')
 f.write(config)

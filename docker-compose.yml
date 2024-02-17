@@ -17,6 +17,7 @@ services:
     volumes:
       - ./postgres:/docker-entrypoint-initdb.d/
       - ${DATA}/postgres:/var/lib/postgresql/data
+      - ${DATA}/artifacts.bak:/artifacts
     environment:
       - POSTGRES_MULTIPLE_DATABASES=${POSTGRES_DATABASES}
       - POSTGRES_USER=postgres
@@ -66,6 +67,7 @@ services:
     container_name: gitea
     volumes:
       - ${DATA}/git:/data
+      - ${DATA}/artifacts.bak:/artifacts
     environment:
       - ROOT_URL="http://git.rms.local/"
       - APP_NAME="Gitea:My private Git repository"
@@ -93,8 +95,10 @@ services:
     volumes:
       - ./rms-web/rms-web.json:/etc/rms/rms-web.json 
       - ${MEDIA}/library:/media
+      - ${MEDIA}/backup:/backup
     environment:
       - RMS_CCTV_ENABLED=true
+      - RMS_CONTENT_BACKUPS=/backup
       - TZ=Europe/Moscow
     labels:
       - "traefik.enable=true"
@@ -175,6 +179,25 @@ services:
     depends_on:
       - bot-client
       - nextcloud
+
+  backup:
+    image: racoonmediaserver/backup:latest
+    restart: always
+    container_name: backup
+    environment:
+      - TZ=Europe/Moscow
+      - RMS_DATABASE_HOST=postgres
+      - RMS_SERVICES_NEXTCLOUD_DATA=/data/nc
+      - RMS_DEBUG_VERBOSE=true
+    volumes:
+      - ${MEDIA}/backup:/backups
+      - ${DATA}/artifacts.bak:/artifacts
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA}/nextcloud:/data/nc:ro
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    depends_on:
+      - postgres
 
   dlna:
     container_name: dlna
