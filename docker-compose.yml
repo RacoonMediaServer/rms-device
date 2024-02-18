@@ -1,5 +1,14 @@
 version: '3'
-services:     
+services:
+  etcd:
+    image: bitnami/etcd
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379,http://${INTERFACE_IP}:2379
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+
   mongo:
     image: mongo
     restart: always
@@ -100,6 +109,8 @@ services:
       - RMS_CCTV_ENABLED=true
       - RMS_CONTENT_BACKUPS=/backup
       - TZ=Europe/Moscow
+      - MICRO_REGISTRY=etcd
+      - MICRO_REGISTRY_ADDRESS=etcd:2379
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.web.rule=Host(`rms.local`)"
@@ -107,17 +118,23 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"     
     depends_on:
       - gateway
+      - etcd
 
   bot-client:
     image: racoonmediaserver/bot-client:latest
     restart: always
     container_name: bot-client
     environment:
+      - TZ=Europe/Moscow
       - RMS_DEVICE=${DEVICE}
       - RMS_REMOTE_HOST=${REMOTE_HOST}
       - RMS_REMOTE_PORT=${REMOTE_PORT}
+      - MICRO_REGISTRY=etcd
+      - MICRO_REGISTRY_ADDRESS=etcd:2379
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+    depends_on:
+      - etcd
 
   torrent:
     image: racoonmediaserver/torrent:latest
@@ -125,10 +142,14 @@ services:
     container_name: torrent
     environment:
       - RMS_DATABASE=/media/library/torrents/db
+      - MICRO_REGISTRY=etcd
+      - MICRO_REGISTRY_ADDRESS=etcd:2379
     volumes:
       - ${MEDIA}/library/torrents:/media/library/torrents
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+    depends_on:
+      - etcd
 
   library:
     image: racoonmediaserver/library:latest
@@ -140,12 +161,15 @@ services:
       - RMS_REMOTE_HOST=${REMOTE_HOST}
       - RMS_REMOTE_PORT=${REMOTE_PORT}
       - MICRO_BROKER_ADDRESS=0.0.0.0:5531
+      - MICRO_REGISTRY=etcd
+      - MICRO_REGISTRY_ADDRESS=etcd:2379
     volumes:
       - ${MEDIA}/library:/media/library
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     depends_on:
       - mongo
+      - etcd
 
   notifier:
     image: racoonmediaserver/notifier:latest
@@ -157,10 +181,13 @@ services:
       - RMS_REMOTE_HOST=${REMOTE_HOST}
       - RMS_REMOTE_PORT=${REMOTE_PORT}
       - MICRO_BROKER_ADDRESS=0.0.0.0:5531
+      - MICRO_REGISTRY=etcd
+      - MICRO_REGISTRY_ADDRESS=etcd:2379
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     depends_on:
       - mongo
+      - etcd
 
   notes:
     image: racoonmediaserver/notes:latest
@@ -169,9 +196,11 @@ services:
     environment:
       - TZ=Europe/Moscow
       - RMS_DATABASE=/db/notes.db
-      - RMS_WEBDAV_ROOT=http://nextcloud/remote.php/dav
+      - RMS_WEBDAV_ROOT=https://nc.racoondev.top/remote.php/dav
       - RMS_WEBDAV_USER=${USER}
       - RMS_WEBDAV_PASSWORD=${PASSWORD}
+      - MICRO_REGISTRY=etcd
+      - MICRO_REGISTRY_ADDRESS=etcd:2379
     volumes:
       - ${DATA}/notes:/db
     labels:
@@ -179,6 +208,7 @@ services:
     depends_on:
       - bot-client
       - nextcloud
+      - etcd
 
   backup:
     image: racoonmediaserver/backup:latest
@@ -189,6 +219,8 @@ services:
       - RMS_DATABASE_HOST=postgres
       - RMS_SERVICES_NEXTCLOUD_DATA=/data/nc
       - RMS_DEBUG_VERBOSE=true
+      - MICRO_REGISTRY=etcd
+      - MICRO_REGISTRY_ADDRESS=etcd:2379
     volumes:
       - ${MEDIA}/backup:/backups
       - ${DATA}/artifacts.bak:/artifacts
@@ -198,6 +230,23 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
     depends_on:
       - postgres
+      - etcd
+
+  cctv:
+    image: racoonmediaserver/cctv:latest
+    restart: always
+    container_name: cctv
+    environment:
+      - TZ=Europe/Moscow
+      - RMS_DATABASE_HOST=postgres
+      - RMS_DEBUG_VERBOSE=true
+      - MICRO_REGISTRY=etcd
+      - MICRO_REGISTRY_ADDRESS=etcd:2379
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    depends_on:
+      - postgres
+      - etcd 
 
   dlna:
     container_name: dlna
