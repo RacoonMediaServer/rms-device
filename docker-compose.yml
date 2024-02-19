@@ -195,14 +195,9 @@ services:
     container_name: notes
     environment:
       - TZ=Europe/Moscow
-      - RMS_DATABASE=/db/notes.db
-      - RMS_WEBDAV_ROOT=https://nc.racoondev.top/remote.php/dav
-      - RMS_WEBDAV_USER=${USER}
-      - RMS_WEBDAV_PASSWORD=${PASSWORD}
+      - RMS_DATABASE_HOST=postgres
       - MICRO_REGISTRY=etcd
       - MICRO_REGISTRY_ADDRESS=etcd:2379
-    volumes:
-      - ${DATA}/notes:/db
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     depends_on:
