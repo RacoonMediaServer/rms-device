@@ -176,6 +176,7 @@ services:
     restart: always
     container_name: notifier
     environment:
+      - TZ=Europe/Moscow
       - RMS_DEVICE=${DEVICE}
       - RMS_DATABASE=mongodb://mongo:27017/notifier
       - RMS_REMOTE_HOST=${REMOTE_HOST}
