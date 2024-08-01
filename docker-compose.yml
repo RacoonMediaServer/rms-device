@@ -2,6 +2,8 @@ version: '3'
 services:
   etcd:
     image: bitnami/etcd
+    container_name: etcd
+    restart: always
     environment:
       - ALLOW_NONE_AUTHENTICATION=yes
       - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379,http://${INTERFACE_IP}:2379
@@ -131,8 +133,11 @@ services:
       - RMS_REMOTE_PORT=${REMOTE_PORT}
       - MICRO_REGISTRY=etcd
       - MICRO_REGISTRY_ADDRESS=etcd:2379
+      - RMS_CONTENT-DIRECTORY=/media
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+    volumes:
+      - ${MEDIA}/library:/media
     depends_on:
       - etcd
 
@@ -141,7 +146,7 @@ services:
     restart: always
     container_name: torrent
     environment:
-      - RMS_DATABASE=/media/library/torrents/db
+      - RMS_DATABASE_HOST=postgres
       - MICRO_REGISTRY=etcd
       - MICRO_REGISTRY_ADDRESS=etcd:2379
     volumes:
@@ -149,6 +154,7 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     depends_on:
+      - postgres
       - etcd
 
   library:
@@ -243,7 +249,26 @@ services:
     depends_on:
       - postgres
       - etcd
-    
+
+  transcoder:
+    image: racoonmediaserver/transcoder:latest
+    restart: always
+    container_name: transcoder
+    environment:
+      - TZ=Europe/Moscow
+      - RMS_DATABASE_HOST=postgres
+      - RMS_DEBUG_VERBOSE=true
+      - MICRO_REGISTRY=etcd
+      - MICRO_REGISTRY_ADDRESS=etcd:2379
+      - RMS_TRANSCODING_DIRECTORY=/media
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    volumes:
+      - ${MEDIA}/library:/media
+    depends_on:
+      - postgres
+      - etcd
+
   speech:
     image: racoonmediaserver/speech:latest
     restart: always
@@ -273,6 +298,21 @@ services:
 
   watchtower:
     image: containrrr/watchtower
+    restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --interval 30 --label-enable
+
+
+  nfs:
+    image: itsthenetwork/nfs-server-alpine:12
+    container_name: nfs
+    restart: always
+    privileged: true
+    environment:
+      - SHARED_DIRECTORY=/data
+    volumes:
+      - ${MEDIA}:/data
+    ports:
+      - 2049:2049
+
