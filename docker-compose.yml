@@ -242,7 +242,23 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
     depends_on:
       - postgres
-      - etcd 
+      - etcd
+    
+  speech:
+    image: racoonmediaserver/speech:latest
+    restart: always
+    container_name: speech
+    environment:
+      - TZ=Europe/Moscow
+      - RMS_DEBUG_VERBOSE=true
+      - MICRO_REGISTRY=etcd
+      - MICRO_REGISTRY_ADDRESS=etcd:2379
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    volumes:
+      - ${MEDIA}/models:/root/.cache/whisper
+    depends_on:
+      - etcd  
 
   dlna:
     container_name: dlna
