@@ -62,11 +62,11 @@ services:
       - POSTGRES_PASSWORD=qweasd123
       - NEXTCLOUD_ADMIN_USER=${USER}
       - NEXTCLOUD_ADMIN_PASSWORD=${PASSWORD}
-      - NEXTCLOUD_TRUSTED_DOMAINS="nc.rms.local nextcloud"
+      - NEXTCLOUD_TRUSTED_DOMAINS="nc.rms.intra nextcloud"
       - PHP_UPLOAD_LIMIT=40G
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nextcloud.rule=Host(`nc.rms.local`)"
+      - "traefik.http.routers.nextcloud.rule=Host(`nc.rms.intra`)"
       - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
     depends_on:
       - postgres
@@ -80,7 +80,7 @@ services:
       - ${DATA}/git:/data
       - ${DATA}/artifacts.bak:/artifacts
     environment:
-      - ROOT_URL="http://git.rms.local/"
+      - ROOT_URL="http://git.rms.intra/"
       - APP_NAME="Gitea:My private Git repository"
       - USER_UID=1000
       - USER_GID=1000
@@ -94,7 +94,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.gitea.loadbalancer.server.port=3000"
-      - "traefik.http.routers.gitea.rule=Host(`git.rms.local`)"
+      - "traefik.http.routers.gitea.rule=Host(`git.rms.intra`)"
     depends_on:
       - postgres
       - gateway
@@ -115,7 +115,7 @@ services:
       - MICRO_REGISTRY_ADDRESS=etcd:2379
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.web.rule=Host(`rms.local`)"
+      - "traefik.http.routers.web.rule=Host(`rms.intra`)"
       - "traefik.http.services.web.loadbalancer.server.port=8080"
       - "com.centurylinklabs.watchtower.enable=true"     
     depends_on:
